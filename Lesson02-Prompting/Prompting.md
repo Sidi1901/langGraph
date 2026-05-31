@@ -1,4 +1,14 @@
 
+### Content
+
+1. Prompts Fundamentals
+2. Core Prompting
+3. Reasoning Techniques
+4. Complex Workflows & System Optimization
+5. AI Application Development
+6. Multimodal
+7. Security
+
 
 ### Phase 1 — Prompts Fundamentals
 
@@ -476,7 +486,45 @@ Instead of asking the model to solve a task directly, you ask it to help design 
 </pre>
 
 
-### Phase 5 — Multimodal & Applied Prompting
+### Phase 5 — AI Application Development
+
+#### Agent Prompting
+
+Agent Prompting is the technique of designing prompts that enable an AI agent to reason, make decisions, use tools, and accomplish tasks autonomously.
+
+Why Use It?
+Tool usage
+Decision making
+Task execution
+Workflow automation
+
+#### Multi-Agent Prompting
+Multi-Agent Prompting is the practice of designing prompts for multiple specialized agents that collaborate to solve a problem.
+
+Each agent should have a single clear responsibility.
+
+Planner Agent
+↓
+Research Agent
+↓
+Writer Agent
+
+Planner Prompt : Create a research plan.
+
+Research Prompt: Gather information according to the plan.
+Writer Prompt: Generate the final report.
+
+
+#### Memory Prompting
+Memory Prompting is the technique of incorporating previous conversations, stored facts, user preferences, or workflow history into prompts.
+
+Why Use It?
+Personalized responses
+Long-running workflows
+Better continuity
+
+
+### Phase 6— Multimodal & Applied Prompting
 
 #### Multimodal Prompting
 A modality is a type of data.

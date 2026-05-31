@@ -1,0 +1,4 @@
+HumanMessage(content="What is the status of my refund?") 
+AIMessage(content="Your refund is initiated on April 26 2026")
+HumanMessage(content="IS my refund completed?")
+AIMessage(content="No, "initiated" means that the process of sending your refund started on April 26, 2026. It typically takes a few business days for the refund to be fully processed and for the funds to appear in your account.  Would you like me to check if there's an estimated completion date or provide any tracking information?")

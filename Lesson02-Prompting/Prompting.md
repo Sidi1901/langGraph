@@ -558,7 +558,6 @@ Produce incorrect outputs
 Manipulate reasoning
 
 <pre>
-<pre>
 +-----------------------------------------------------------------------+
 | EXAMPLE: Adversarial Prompt Screening                                 |
 |                                                                       |
@@ -690,7 +689,6 @@ Large companies often maintain
 |                         ↓                                             |
 |  [Monitor Cost/Latency] <- [Deploy Variant v2.4.1] <- [Tag Version]   |
 +-----------------------------------------------------------------------+
-</pre>
 </pre>
 
 

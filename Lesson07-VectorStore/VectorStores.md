@@ -24,9 +24,17 @@
 
 An embedding is a numerical representation of data that captures its semantic meaning.
 
+The key property: **semantically similar inputs produce numerically similar vectors.**
+
 Embedding = Text (or Image, Audio…) → Fixed-length array of numbers
 
-The key property: **semantically similar inputs produce numerically similar vectors.**
+Dimensions are the number of individual numbers in an embedding vector.
+
+A 2D point has 2 dimensions: (x, y). A 3D point has 3: (x, y, z). An embedding vector is the same idea — just with hundreds or thousands of numbers instead of 2 or 3.
+
+Note: More (e.g. 3072)	Captures more nuance, uses more memory, slower search. Fewer (e.g. 384)	Faster and cheaper, but loses some semantic detail
+
+
 
 <pre>
 +-----------------------------------------------------------------------+

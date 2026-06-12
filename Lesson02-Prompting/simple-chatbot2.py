@@ -1,4 +1,12 @@
-# By using chatPromptTemplate and chat_history.txt for storing messages
+"""
+
+As Chat Models are used more than direct models, it is important to understand how to use them effectively.
+
+Using chatPromptTemplate and chat_history.txt for storing messages
+
+
+"""
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from dotenv import load_dotenv

@@ -1,3 +1,12 @@
+"""
+
+Here Messages in langchain are illustrated
+
+HumanMessage, SystemMessage, AIMessage
+
+"""
+
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from dotenv import load_dotenv

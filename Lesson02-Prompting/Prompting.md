@@ -1,13 +1,47 @@
 
 ### Content
 
-1. Prompts Fundamentals
-2. Core Prompting
-3. Reasoning Techniques
-4. Complex Workflows & System Optimization
-5. AI Application Development
-6. Multimodal
-7. Security
+1. **Prompts Fundamentals**
+   - Composition
+   - Context Window
+2. **Core Prompting**
+   - Zero-Shot Prompting
+   - One-Shot Prompting
+   - Few-Shot Prompting
+   - System Prompting
+   - Delimiter Prompting
+3. **Reasoning Techniques**
+   - Chain of Thought
+   - Consistency Prompting
+   - Self-Consistency
+   - Plan and Solve Prompting
+4. **Complex Workflows & System Optimization**
+   - Chain of Draft (CoD)
+   - System 2 Attention (S2A)
+   - Prompt Chaining
+   - Meta Prompting
+5. **AI Application Development**
+   - Agent Prompting
+   - ReAct Pattern
+   - Tool / Function Calling Prompts
+   - Reflexion / Iterative Refinement
+   - LLM-as-Judge
+   - HyDE — Hypothetical Document Embeddings
+   - Multi-Agent Prompting
+   - Memory Prompting
+6. **Multimodal & Applied Prompting**
+   - Multimodal Prompting
+   - RAG
+7. **Security & Robustness**
+   - Adversarial Prompting
+   - Prompt Injection
+   - Jailbreaking
+   - Defense Techniques
+8. **Prompt Management & Evaluation**
+   - Prompt Management Lifecycle
+   - Promptmetheus
+   - DeepEval
+   - Prompt Storage
 
 
 ### Phase 1 — Prompts Fundamentals
@@ -316,16 +350,26 @@ Response
 
 <pre>
 +-----------------------------------------------------------------------+
-| EXAMPLE: Consistency Prompting                                        |
+| EXAMPLE: Plan and Solve Prompting                                     |
 |                                                                       |
 | Prompt:                                                               |
-| Evaluate the network log below. You MUST strictly follow this form:   |
-| 1. CRITICAL ERROR FOUND: [True/False]                                 |
-| 2. IMPACTED COMPONENT: [Name]                                         |
-| 3. SUGGESTED ACTION: [Step]                                           |
-| Do not deviate from this format under any circumstances.              |
+| A production API is returning 503 errors. Devise a plan to diagnose  |
+| the root cause, then execute each step of the plan.                  |
 |                                                                       |
-| Log: "DB_POOL connection timed out at 10:02:11 AM on node 4."         |
+| Output:                                                               |
+| PLAN:                                                                 |
+| 1. Check service health endpoint for upstream status.                 |
+| 2. Inspect recent deployment logs for breaking changes.               |
+| 3. Review load balancer error rate metrics.                           |
+| 4. Validate database connection pool availability.                    |
+|                                                                       |
+| EXECUTION:                                                            |
+| Step 1: GET /health returns {"status":"degraded","db":"timeout"}.    |
+| Step 2: Deployment at 14:32 UTC introduced a new DB query.            |
+| Step 3: Load balancer shows 78% error rate starting at 14:33 UTC.    |
+| Step 4: DB pool exhausted — max_connections limit reached.            |
+|                                                                       |
+| Root Cause: New query at 14:32 UTC saturates the DB connection pool. |
 +-----------------------------------------------------------------------+
 </pre>
 
@@ -523,6 +567,263 @@ Personalized responses
 Long-running workflows
 Better continuity
 
+Types of Memory:
+
+1. Short-Term Memory  — Current conversation history held in the active context window.
+2. Long-Term Memory   — Persistent facts stored in a database, retrieved on demand.
+3. Episodic Memory    — Records of past interactions or events (what happened, when).
+
+<pre>
++-----------------------------------------------------------------------+
+| EXAMPLE: Memory Prompting in a Support Agent                          |
+|                                                                       |
+| Injected Memory Block (built by the application at runtime):          |
+| <memory>                                                              |
+| User: Alice. Role: Platform Engineer. Team: Infra-EU.                 |
+| Past issue (2024-11-03): Resolved Kafka broker failover on node-7.    |
+| Preference: Prefers bash one-liners over multi-step scripts.          |
+| </memory>                                                             |
+|                                                                       |
+| User Message:                                                         |
+| "My Kafka cluster is showing ISR shrinkage again."                    |
+|                                                                       |
+| Model Output (memory-aware):                                          |
+| Based on your previous node-7 failover, check broker connectivity     |
+| first: nc -zv <broker-ip> 9092 && kafka-topics.sh --describe         |
++-----------------------------------------------------------------------+
+</pre>
+
+
+#### ReAct Pattern (Reasoning + Acting)
+
+ReAct is a prompting pattern where the model alternates between Thought steps and Action steps in a continuous loop until it reaches a final answer. Each observation from an action feeds back into the next thought.
+
+The loop:
+
+Thought → Action → Observation
+     ↑________________________|
+              (repeat)
+                  ↓
+             Final Answer
+
+Why Use It?
+Grounds reasoning in real tool results, not assumptions
+Catches errors mid-task and self-corrects
+Core pattern behind most LangGraph tool-using agents
+
+LangGraph Connection
+
+Each ReAct cycle maps directly to a LangGraph node:
+
+User Query
+      ↓
+  Think Node  ← decides what tool to call
+      ↓
+  Act Node    ← executes the tool
+      ↓
+Observe Node  ← reads tool output, loops or exits
+      ↓
+   Answer
+
+<pre>
++-----------------------------------------------------------------------+
+| EXAMPLE: ReAct Agent Loop                                             |
+|                                                                       |
+| User: "What is the current disk usage on node-3?"                     |
+|                                                                       |
+| Thought 1: I need to run a disk usage check on node-3.               |
+| Action 1:  run_shell(cmd="df -h /", host="node-3")                   |
+| Observation 1: /dev/sda1  480G  461G  19G  96% /                     |
+|                                                                       |
+| Thought 2: Disk is at 96%. I should check the largest directories.   |
+| Action 2:  run_shell(cmd="du -sh /* | sort -rh | head -5",           |
+|            host="node-3")                                             |
+| Observation 2: 210G /var/log  180G /data  44G /opt ...               |
+|                                                                       |
+| Thought 3: /var/log is the culprit. I have enough to answer.         |
+| Final Answer: Node-3 disk is 96% full. /var/log consumes 210G.       |
+|               Recommend: rotate or archive logs immediately.          |
++-----------------------------------------------------------------------+
+</pre>
+
+
+#### Tool / Function Calling Prompts
+
+Tool Calling Prompting is the technique of structuring prompts so the model decides when and how to invoke external tools (APIs, databases, shell commands, calculators) rather than generating answers from internal memory alone.
+
+The model is given a tool schema and must output a structured call when a tool is needed.
+
+Key Design Rules:
+1. Each tool must have a clear name and description — the model reads these to decide when to call it.
+2. Keep tool schemas minimal — only expose parameters the model needs.
+3. Tell the model explicitly what to do if a tool returns an error.
+4. Instruct the model NOT to call tools when the answer is already known.
+
+<pre>
++-----------------------------------------------------------------------+
+| EXAMPLE: Tool Calling Prompt Structure                                |
+|                                                                       |
+| System Prompt:                                                        |
+| You are an infrastructure assistant. You have access to these tools:  |
+|                                                                       |
+| - get_server_status(host: str) -> dict                                |
+|   Returns CPU, memory, and disk stats for the given hostname.         |
+|                                                                       |
+| - restart_service(host: str, service: str) -> str                     |
+|   Restarts the named systemd service on the given host.               |
+|                                                                       |
+| Call a tool only when live data is required.                          |
+| If a tool errors, report the error — do not guess the result.         |
+|                                                                       |
+| User: "Is the nginx service healthy on web-01?"                       |
+|                                                                       |
+| Model Output:                                                         |
+| <tool_call>                                                           |
+|   {"name": "get_server_status", "arguments": {"host": "web-01"}}     |
+| </tool_call>                                                          |
++-----------------------------------------------------------------------+
+</pre>
+
+
+#### Reflexion / Iterative Refinement
+
+Reflexion is a prompting pattern where the model generates an initial output, then critiques that output against a set of criteria, and finally revises it based on the critique. This loop can run multiple times.
+
+Generate → Critique → Revise → (repeat if needed) → Final Output
+
+Why Use It?
+Catches reasoning errors the model missed on the first pass
+Improves output quality without human feedback in the loop
+Useful for code generation, report writing, and complex analysis
+
+LangGraph Connection
+
+Generator Node
+      ↓
+Critic Node  ← scores or flags issues
+      ↓
+  Revise?  ──── No ──→ Output
+      |
+     Yes
+      ↓
+Generator Node (with critique injected)
+
+<pre>
++-----------------------------------------------------------------------+
+| EXAMPLE: Reflexion Loop for Code Review                               |
+|                                                                       |
+| Step 1 — Generate:                                                    |
+| Prompt: "Write a Python function to parse an nginx access log line."  |
+| Output: def parse_log(line): return line.split(" ")                   |
+|                                                                       |
+| Step 2 — Critique:                                                    |
+| Prompt: "Review the function above. Does it handle quoted fields,     |
+|          status codes, and malformed lines? List specific failures."  |
+| Output: "Fails on quoted User-Agent strings. No error handling for    |
+|          lines with missing fields. Returns list not dict."           |
+|                                                                       |
+| Step 3 — Revise:                                                      |
+| Prompt: "Rewrite the function fixing all issues identified."          |
+| Output: import shlex                                                  |
+|         def parse_log(line):                                          |
+|           try: parts = shlex.split(line); return {"ip": parts[0],    |
+|                "status": parts[8], "agent": parts[11]}               |
+|           except (IndexError, ValueError): return None               |
++-----------------------------------------------------------------------+
+</pre>
+
+
+#### LLM-as-Judge
+
+LLM-as-Judge is the practice of using one LLM call to evaluate, score, or compare the output of another LLM call. Instead of relying solely on human reviewers, a judge model is prompted with a rubric to rate quality, accuracy, or relevance.
+
+Why Use It?
+Scales evaluation without human bottleneck
+Used to compare prompt variants (A/B testing)
+Core of automated evaluation pipelines and DeepEval metrics
+
+Judge Prompt Structure:
+1. Provide the original question.
+2. Provide the model's answer.
+3. Provide the rubric / scoring criteria.
+4. Ask the judge to score and explain.
+
+<pre>
++-----------------------------------------------------------------------+
+| EXAMPLE: LLM-as-Judge Evaluation Prompt                               |
+|                                                                       |
+| System: You are a strict technical evaluator. Score the answer below  |
+| on a scale of 1–5 using the rubric provided. Output ONLY:             |
+| SCORE: [1-5] | REASON: [one sentence]                                 |
+|                                                                       |
+| <question>                                                            |
+| What causes a Kafka consumer lag to increase?                         |
+| </question>                                                           |
+|                                                                       |
+| <answer>                                                              |
+| Consumer lag increases when producers write messages faster than the  |
+| consumer group can process and commit offsets.                        |
+| </answer>                                                             |
+|                                                                       |
+| <rubric>                                                              |
+| 5 — Accurate, complete, uses correct Kafka terminology.               |
+| 3 — Partially correct but missing offset commit detail.               |
+| 1 — Incorrect or misleading.                                          |
+| </rubric>                                                             |
+|                                                                       |
+| Judge Output:                                                         |
+| SCORE: 5 | REASON: Correctly identifies producer/consumer rate        |
+| imbalance and offset commit as the root mechanism.                    |
++-----------------------------------------------------------------------+
+</pre>
+
+
+#### HyDE — Hypothetical Document Embeddings
+
+HyDE is an advanced RAG retrieval technique. Instead of embedding the raw user question (which is often short and semantically distant from answer documents), the model first generates a hypothetical answer document, then that generated text is embedded and used to search the vector store.
+
+Standard RAG:
+User Question → Embed Question → Search → Retrieve Docs → LLM → Answer
+
+HyDE RAG:
+User Question → LLM generates Hypothetical Answer → Embed Hypothetical Answer → Search → Retrieve Docs → LLM → Final Answer
+
+Why It Works:
+A generated answer uses vocabulary and phrasing closer to what real answer documents look like, producing a better embedding match during retrieval.
+
+When to Use:
+Queries that are short or ambiguous
+Domains where question and answer language differ significantly
+When standard retrieval quality is poor
+
+<pre>
++-----------------------------------------------------------------------+
+| EXAMPLE: HyDE Retrieval Workflow                                      |
+|                                                                       |
+| User Question: "Why does my pod keep crashing?"                       |
+|                                                                       |
+| Step 1 — Generate Hypothetical Answer (no grounding, fast):           |
+| Prompt: "Write a short technical explanation for why a Kubernetes     |
+|          pod might repeatedly crash-loop."                            |
+| Hypothetical Output: "A pod enters CrashLoopBackOff when the          |
+| container exits with a non-zero code repeatedly. Common causes:       |
+| misconfigured env vars, missing secrets, OOMKilled by resource        |
+| limits, or a failing readiness probe."                                |
+|                                                                       |
+| Step 2 — Embed the hypothetical answer (not the original question).   |
+|                                                                       |
+| Step 3 — Search vector store using that embedding.                    |
+| Retrieved: Kubernetes runbook on CrashLoopBackOff diagnosis.          |
+|                                                                       |
+| Step 4 — Feed retrieved runbook + original question to LLM.          |
+| Final Answer: Grounded, accurate response from real documentation.    |
++-----------------------------------------------------------------------+
+</pre>
+
+***When Should You Use HyDE?***
+Great for: Open-ended questions, complex troubleshooting, or queries where the user doesn't know the exact keywords used in the source documentation.
+
+Bad for: Exact keyword lookups (like searching for a specific product ID or a person's name) or when you cannot afford the extra latency and API cost of calling an LLM before hitting your vector database.
 
 ### Phase 6— Multimodal & Applied Prompting
 
@@ -700,7 +1001,7 @@ Example
 </pre>
 
 
-### 8 — Prompt Management & Evaluation
+### Phase 8 — Prompt Management & Evaluation
 
 This phase focuses on operationalizing prompts. Writing a prompt once is easy. Maintaining hundreds of prompts in production is hard.
 
@@ -726,8 +1027,7 @@ Improvement
 So called in PromptOps
 
 **Prompt Registry**
-Large companies often maintain:
-Large companies often maintain
+Large companies often maintain a central registry of versioned, named prompt templates shared across teams and services.
 
 <pre>
 +-----------------------------------------------------------------------+

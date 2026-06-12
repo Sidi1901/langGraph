@@ -70,3 +70,6 @@ A ChatPromptTemplate is an advanced template designed for Chat Models that expec
 +--------------------------------------------------------------------------------+
 
 </pre>
+
+
+We will be using ChatPromptTemplate in examples.

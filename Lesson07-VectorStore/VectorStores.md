@@ -31,9 +31,9 @@ The key property: **semantically similar inputs produce numerically similar vect
 +-----------------------------------------------------------------------+
 | EXAMPLE: Semantic Similarity in Vector Space                          |
 |                                                                       |
-| "dog"  → [0.21, -0.54, 0.87, ...]    ─┐                              |
-| "puppy"→ [0.19, -0.51, 0.84, ...]    ─┤  Close together              |
-| "car"  → [-0.72, 0.33, -0.10, ...]   ─┘  Far away                    |
+| "dog"  → [0.21, -0.54, 0.87, ...]    ─┐                               |
+| "puppy"→ [0.19, -0.51, 0.84, ...]    ─┤  Close together               |
+| "car"  → [-0.72, 0.33, -0.10, ...]   ─┘  Far away                     |
 |                                                                       |
 | "dog" and "puppy" are semantically similar → their vectors are        |
 | numerically close. "car" is unrelated → far away in vector space.     |

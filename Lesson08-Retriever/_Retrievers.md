@@ -110,29 +110,40 @@ Prevents low-quality or unrelated chunks from entering the LLM prompt.
 
 #### MMR — Maximal Marginal Relevance
 
-Problem with pure similarity search: the top-k results are often near-duplicates,
-providing redundant information.
+A standard similarity search returns the top-N most similar documents, but these often end up being near-duplicates of each other — you get lots of redundant information and miss coverage of different aspects of your query.
 
-MMR balances relevance and diversity.
+Maximal Marginal Relevance (MMR) is a retrieval algorithm that balances two competing goals when selecting documents:
 
-For each result:
-- It must be similar to the query (relevance).
-- It must be different from already-selected results (diversity).
+Relevance — how similar a document is to the query
+Diversity — how different a document is from already-selected documents
 
 <pre>
-+-----------------------------------------------------------------------+
-| EXAMPLE: MMR Retriever                                                |
-|                                                                       |
-| retriever = vector_store.as_retriever(                                |
-|     search_type="mmr",                                                |
-|     search_kwargs={"k": 4, "fetch_k": 20}                            |
-| )                                                                     |
-|                                                                       |
-| # fetch_k=20  ← candidate pool ANN fetches first                     |
-| # k=4         ← final diverse results returned from the pool          |
-|                                                                       |
-| Use MMR when you need broad coverage, not just the most similar chunk.|
-+-----------------------------------------------------------------------+
++-----------------------------------------------------------------------------------+
+| EXAMPLE: MMR Retriever                                                            |
+|                                                                                   |
+| Documents in Vector Store:                                                        |
+|                                                                                   |
+| D1 : Climate change is causing glaciers to melt rapidly in the arctic region.     |
+| D2 : Glaciers in the arctic are melting at an alarming rate due to rising temp.   |
+| D3 : Deforestation in the Amazon is accelerating global climate change.           |
+| D4 : Climate change is increasing the frequency of wildfires in California.       |
+| D5 : Rising sea levels due to climate change threaten coastal cities.             |
+| D6 : Deforestation in the Amazon is accelerating global climate change.           |
++-----------------------------------------------------------------------------------+
+| Query: "climate change effects"                                                   |
++-----------------------------------------------------------------------------------+
+| Similarity Search (k=3) — top-3 most similar, but redundant:                      |
+|   D1 : Climate change is causing glaciers to melt rapidly in the arctic region.   |
+|   D2 : Glaciers in the arctic are melting at an alarming rate due to rising temp. |
+|   D3 : Deforestation in the Amazon is accelerating global climate change.         |
++-----------------------------------------------------------------------------------+
+| MMR Search (k=3) — relevant AND diverse:                                          |
+|   D1 : Climate change is causing glaciers to melt rapidly in the arctic region.   |
+|   D4 : Climate change is increasing the frequency of wildfires in California.     |
+|   D5 : Rising sea levels due to climate change threaten coastal cities.           |
++-----------------------------------------------------------------------------------+
+| Result: MMR avoids near-duplicate D2 and picks D4, D5 for better coverage.        |
++-----------------------------------------------------------------------------------+
 </pre>
 
 
@@ -142,6 +153,13 @@ Problem: A user's single query may not match the wording of stored documents wel
 
 The Multi-Query Retriever uses an LLM to generate multiple rephrased variants of the
 original query, runs all of them, then merges the unique results.
+
+***How it Works***
+Query Expansion: The LLM takes the initial prompt and generates (by default) 3 alternative versions.
+
+Bulk Retrieval: LangChain runs a similarity search for all variations against your vector database.
+
+Deduplication: It combines all the resulting documents and removes duplicates, ensuring a richer, more comprehensive set of context for your final answer.
 
 Original Query
     ↓
@@ -157,22 +175,45 @@ Final context for LLM
 This increases recall at the cost of extra LLM calls.
 
 <pre>
-+-----------------------------------------------------------------------+
-| EXAMPLE: Multi-Query Retriever                                        |
-|                                                                       |
-| from langchain.retrievers import MultiQueryRetriever                  |
-|                                                                       |
-| retriever = MultiQueryRetriever.from_llm(                             |
-|     retriever=vector_store.as_retriever(),                            |
-|     llm=llm                                                           |
-| )                                                                     |
-|                                                                       |
-| User query: "Why is my Kafka slow?"                                   |
-| Generated variants:                                                   |
-|   - "Kafka performance degradation causes"                            |
-|   - "Kafka broker throughput issues"                                  |
-|   - "How to improve Kafka consumer speed"                             |
-+-----------------------------------------------------------------------+
++-----------------------------------------------------------------------------------+
+| EXAMPLE: Multi-Query Retriever                                                    |
+|                                                                                   |
+| WHY IT MATTERS — The Vocabulary Mismatch Problem:                                 |
+|                                                                                   |
+|   Documents use:  "Kafka broker latency", "consumer lag", "throughput bottleneck" |
+|   User types:     "Why is my Kafka slow?"                                         |
+|                                                                                   |
+|   A plain vector search on "Why is my Kafka slow?" may miss documents that        |
+|   use technical terms like "latency" or "throughput" because the embeddings       |
+|   of informal phrasing sit far from formal documentation in vector space.         |
++-----------------------------------------------------------------------------------+
+| STEP 1 — LLM generates query variants from the original:                          |
+|                                                                                   |
+|   Original : "Why is my Kafka slow?"                                              |
+|   Variant 1: "Kafka performance degradation causes"                               |
+|   Variant 2: "Kafka broker throughput issues"                                     |
+|   Variant 3: "How to improve Kafka consumer speed"                                |
++-----------------------------------------------------------------------------------+
+| STEP 2 — Each variant runs a separate vector search:                              |
+|                                                                                   |
+|   "Why is my Kafka slow?"              → [D1, D2, D3]                             |
+|   "Kafka performance degradation"      → [D2, D4, D5]                             |
+|   "Kafka broker throughput issues"     → [D3, D5, D6]                             |
+|   "How to improve Kafka consumer speed"→ [D1, D6, D7]                             |
++-----------------------------------------------------------------------------------+
+| STEP 3 — Deduplicate and merge all results:                                       |
+|                                                                                   |
+|   Union: {D1, D2, D3, D4, D5, D6, D7}                                             |
+|   Duplicates removed → 7 unique docs instead of the original 3                    |
++-----------------------------------------------------------------------------------+
+| RESULT — Better recall, wider coverage:                                           |
+|                                                                                   |
+|   Without Multi-Query: only docs matching "slow" phrasing are found.              |
+|   With Multi-Query:    docs using "latency", "throughput", "consumer lag"         |
+|                        are all retrieved, giving the LLM richer context.          |
+|                                                                                   |
+|   Trade-off: 4 LLM calls (1 original + 3 variants) instead of 1.                  |
++-----------------------------------------------------------------------------------+
 </pre>
 
 
@@ -195,25 +236,47 @@ Compressed, focused chunks
 LLM prompt
 
 <pre>
-+-----------------------------------------------------------------------+
-| EXAMPLE: Contextual Compression Retriever                             |
-|                                                                       |
-| from langchain.retrievers import ContextualCompressionRetriever       |
-| from langchain.retrievers.document_compressors import LLMChainExtractor|
-|                                                                       |
-| base_retriever = vector_store.as_retriever(search_kwargs={"k": 5})   |
-|                                                                       |
-| compressor = LLMChainExtractor.from_llm(llm)                          |
-|                                                                       |
-| retriever = ContextualCompressionRetriever(                           |
-|     base_compressor=compressor,                                       |
-|     base_retriever=base_retriever                                     |
-| )                                                                     |
-|                                                                       |
-| docs = retriever.get_relevant_documents("What causes OOMKilled?")     |
-|                                                                       |
-| # Each doc is trimmed to only the sentences relevant to the query.    |
-+-----------------------------------------------------------------------+
++-----------------------------------------------------------------------------------+
+| EXAMPLE: Contextual Compression Retriever                                         |
+|                                                                                   |
+| WHY IT MATTERS — The Noisy Chunk Problem:                                         |
+|                                                                                   |
+|   When text is split into chunks for embedding, each chunk is a fixed-size        |
+|   window of text. A chunk matched by vector search might be mostly about          |
+|   something else, with only 1-2 relevant sentences buried inside it.             |
+|                                                                                   |
+|   Passing that whole noisy chunk to the LLM wastes tokens and can confuse it.    |
++-----------------------------------------------------------------------------------+
+| Query: "What causes OOMKilled in Kubernetes?"                                     |
++-----------------------------------------------------------------------------------+
+| STEP 1 — Base retriever fetches 5 full chunks from the vector store:              |
+|                                                                                   |
+|   Chunk 1 (full, ~200 words):                                                     |
+|     "Kubernetes schedules pods onto nodes based on resource requests...           |
+|      Pods can be OOMKilled when they exceed their memory limit. This              |
+|      happens when the container uses more RAM than specified in the               |
+|      resources.limits.memory field. Kubernetes also supports horizontal           |
+|      pod autoscaling based on CPU metrics. You can configure liveness             |
+|      probes to restart unhealthy containers..."                                   |
++-----------------------------------------------------------------------------------+
+| STEP 2 — LLM compressor reads each chunk and extracts only relevant sentences:   |
+|                                                                                   |
+|   Compressed Chunk 1 (~20 words):                                                 |
+|     "Pods can be OOMKilled when they exceed their memory limit, set in            |
+|      resources.limits.memory."                                                    |
+|                                                                                   |
+|   (Sentences about autoscaling, probes, scheduling → discarded as irrelevant)    |
++-----------------------------------------------------------------------------------+
+| STEP 3 — Only the compressed, focused sentences reach the LLM prompt:            |
+|                                                                                   |
+|   Without compression : 5 chunks × ~200 words = ~1000 words sent to LLM         |
+|   With compression    : 5 chunks × ~20 words  = ~100 words sent to LLM          |
+|                                                                                   |
+|   10x fewer tokens, no irrelevant noise, better and cheaper LLM answers.         |
++-----------------------------------------------------------------------------------+
+| Trade-off: Each retrieved chunk requires an extra LLM call to compress it.        |
+|   5 docs fetched → 5 compression calls + 1 final answer call = 6 LLM calls.      |
++-----------------------------------------------------------------------------------+
 </pre>
 
 
@@ -238,7 +301,7 @@ This is the most common retriever in RAG pipelines.
 |     embedding_function=OpenAIEmbeddings()                             |
 | )                                                                     |
 |                                                                       |
-| retriever = vector_store.as_retriever(search_kwargs={"k": 4})        |
+| retriever = vector_store.as_retriever(search_kwargs={"k": 4})         |
 |                                                                       |
 | # The retriever embeds the query at runtime and searches the index.   |
 | docs = retriever.get_relevant_documents("What is LangGraph?")         |
@@ -255,20 +318,4 @@ Useful when:
 - You need up-to-date factual knowledge not in your private corpus.
 - You want to ground answers in a publicly verifiable source.
 
-<pre>
-+-----------------------------------------------------------------------+
-| EXAMPLE: Wikipedia Retriever                                          |
-|                                                                       |
-| from langchain_community.retrievers import WikipediaRetriever         |
-|                                                                       |
-| retriever = WikipediaRetriever(                                        |
-|     top_k_results=2,      ← number of Wikipedia articles to fetch    |
-|     doc_content_chars_max=1000  ← truncate each article at 1000 chars |
-| )                                                                     |
-|                                                                       |
-| docs = retriever.get_relevant_documents("Kafka distributed systems")  |
-|                                                                       |
-| # Returns Document objects with Wikipedia content as page_content     |
-| # and article title + URL in metadata.                                |
-+-----------------------------------------------------------------------+
-</pre>
+***There are are source based retrievers as well.***

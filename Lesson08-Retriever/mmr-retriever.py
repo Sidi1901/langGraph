@@ -7,12 +7,12 @@ load_dotenv()
 
 # Sample docs
 docs = [
-    Document(page_content=""),
-    Document(page_content=""),
-    Document(page_content=""),
-    Document(page_content=""),
-    Document(page_content=""),
-    Document(page_content=""),
+    Document(page_content="Langchain make it easy to work with LLM"),
+    Document(page_content="Langchain is used to build LLM based applications"),
+    Document(page_content="Chroma is used to store and search document embeddings"),
+    Document(page_content="Embeddngs are vector representations of text"),
+    Document(page_content="MMR is a technique to select relevant documents based on relevance and diversity"),
+    Document(page_content="Langchain supports chroma, FAISS, Pinecone and more vector stores"),
 ]
 
 # Initialise embedding model
@@ -24,13 +24,15 @@ embedding_model = GoogleGenerativeAIEmbeddings(
 vector_store = Chroma.from_documents(
     documents=docs,
     embedding=embedding_model,
-    collection_name="my_collection"
 )
 
 # Create retriever
-retriever = vector_store.as_retriever(search_kwargs={"k":2})
+retriever = vector_store.as_retriever(
+    search_type="mmr", # Try with search_type="similarity"
+    search_kwargs={"k":3}
+)
 
-query = "What is Chroma used for?"
+query = "What is langchain?"
 
 results = retriever.invoke(query)
 

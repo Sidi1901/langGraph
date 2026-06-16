@@ -51,3 +51,37 @@ chain = RunnableParallel(
 )
 
 chain.invoke()
+
+
+#### Types of Runnables
+
+1. Task Specific Runnable
+
+=> Performs tasks specific runnables.
+=> These are core langchain components that have been converted into runnables
+=> examples : retriever, promptTemplate, chatOpenAI
+
+2. Runnable Primitives
+
+=> Helps in orchestrating execution
+=> These are fundamental building blocks for structuring execution logic in workflow
+=> examples : RunnableSequence, RunnableParallel
+
+
+#### RunnableSequence
+
+It enables sequential chain of runnables
+
+#### RunnableParallel
+
+
+#### RunnablePassthrough
+
+
+#### RunnableLambda
+
+
+#### RunnableBranch
+
+
+

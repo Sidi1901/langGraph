@@ -1,3 +1,7 @@
+
+
+#### Langchain
+
 LangChain is a framework/library used to build applications powered by Large Language Models (LLMs).
 Instead of writing everything manually, LangChain gives reusable building blocks.
 
@@ -16,6 +20,15 @@ langchain-workspace/
 Provides two types of models
 1) language models - Free from text generation
 2) Embedding models - Optimised for multi-turn conversation
+
+
+### Token
+
+A token can be a whole word, a part of a word (like a syllable), or even a single character (like a punctuation mark or an emoji).On average, for standard 
+
+1 token is approximately 4 characters
+1 token is approximately 0.75 words
+100 tokens is approximately 75 words
 
 ### MODEL PARAMS:
 
@@ -114,6 +127,140 @@ Some context is preserved.
 High-Dimensional Vectors
 
 High-dimensional vectors are the secret sauce behind modern Artificial Intelligence, Machine Learning, and Large Language Models (LLMs). In computer science and mathematics, a vector is simply an ordered list of numbers (often called coordinates or features). The dimensionality is the total number of elements in that list.
+
+Calculating distances across thousands of dimensions requires immense processing power and memory, which is why specialized Vector Databases (like Chroma, Pinecone, or Milvus) are used to handle them efficiently.
+
+
+### Evals
+
+#### What is LLM evals
+Just like unit tests verify software behavior, LLM evals verify AI behavior.
+
+Dataset + Prompt + Model + Metric = Score
+
+The biggest challenge is that LLM outputs are probabilistic, so exact matching often isn't enough. That's why modern evaluation systems increasingly rely on LLM-as-a-Judge, pairwise comparisons, and human-reviewed golden datasets.
+
+Evaluation Pipeline → automated system that runs those evals repeatedly and tracks results
+
+A benchmark is a standardized dataset + rules + scoring method that allows everyone to compare models fairly.
+
+#### Types
+1. Reference-Based Evals 
+- You already know the correct answer
+- Compare expected vs actual
+
+2. Reference-Free Evals
+- Need another LLM or human to judge
+
+#### Common metrics
+1. Exact Match
+- Output must exactly match expected answer.
+
+2. Precision
+- How many predicted positives are actually positive
+
+3. Recall
+- How many actual positives did we find
+
+**Scoring techniques**
+
+F1 score
+score = 2 × Precision × Recall
+
+LLM-as-a-Judge
+Heavily used by LangSmith, DeepEval, Braintrust, Phoenix
+
+Pairwise Evaluation
+Instead of absolute scoring, Compare two outputs.
+
+Human Evaluation
+Human evaluates Correctness, Clarity, Usefulness, Safety. Expensive but highest quality.
+
+Regression Testing
+Prompt v1 -> Score = 90%
+You improved prompt.
+Prompt v2 -> Score = 85%
+
+
+Other evalusations Hallucination Evaluation, Robustness Evaluation
+
+Industry Workflow
+
+Create Golden Dataset -> Run Model -> Calculate Metrics -> Store Result -> Compare Against Previous Version -> Deploy If Better
+
+
+#### Multi-Metric Evaluation
+
+Most production systems don't use one score.
+
+They use multiple dimensions.
+
+Example:
+
+{
+  "correctness": 9,
+  "relevance": 8,
+  "completeness": 7,
+  "clarity": 9,
+  "faithfulness": 8,
+  "coherence":5,
+}
+
+#### Weaknesses of LLM-as-a-Judge
+1. Judge Bias : For example, GPT may prefer GPT-style answers. score might decrease for different model version
+
+2. Hallucinating Judge : Judge can also be wrong. It is still an LLM.
+
+3. Cost : Evaluation can cost more than inference.
+
+#### Benchmarks
+Most benchmarks fall into:
+
+Knowledge
+Reasoning
+Coding
+Math
+Science
+Agent
+Software Engineering
+Safety
+
+1. MMLU = Massive Multitask Language Understanding
+What it measures: General knowledge
+
+2. GPQA
+
+Graduate-level science benchmark.
+
+Much harder than MMLU.
+Questions often require:Physics Chemistry Biology at PhD level.
+
+3. HumanEval
+
+Very important for developers.
+Created by OpenAI.
+Tests code generation.
+
+
+8. SWE-bench
+
+Extremely important today.
+Humans verified issues.
+Measures: Can AI fix real GitHub issues?
+
+
+Today it is one of the most respected coding benchmarks.
+
+#### LLM Application Evals
+
+Because benchmarks evaluate models, while application evals evaluate your entire system.
+
+Industry Trend (2025–2026)
+
+The industry is slowly moving away from Benchmark Scores towards Application-Specific Evals
+
+
+
 
 
 

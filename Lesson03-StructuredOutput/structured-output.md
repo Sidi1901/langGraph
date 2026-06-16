@@ -85,3 +85,8 @@ Pydantic provides full data validation on top of type hints. If the data doesn't
 | user = User(name="John", age=25)          |
 +-------------------------------------------+
 </pre>
+
+
+Some useful 
+1) Optional
+2) Literals

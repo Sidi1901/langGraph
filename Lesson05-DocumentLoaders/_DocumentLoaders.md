@@ -88,10 +88,4 @@ loader = PyPDFLoader("book.pdf")
 docs = loader.load()
 
 
-#### WebBaseLoader
-
-
-#### CSVLoader
-
-
 #### Custom data loader

@@ -80,7 +80,7 @@ Useful when you want to inspect or log how confident the retrieval was.
 | )                                                                     |
 |                                                                       |
 | for doc, score in results:                                            |
-|     print(f"Score: {score:.4f} | {doc.page_content[:60]}")           |
+|     print(f"Score: {score:.4f} | {doc.page_content[:60]}")            |
 |                                                                       |
 | # Score is cosine similarity — higher means more relevant.            |
 | # Score: 0.9121 | LangChain is a framework for building LLM apps...   |
@@ -318,4 +318,4 @@ Useful when:
 - You need up-to-date factual knowledge not in your private corpus.
 - You want to ground answers in a publicly verifiable source.
 
-***There are are source based retrievers as well.***
+***There are other source based retrievers as well.***

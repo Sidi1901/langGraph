@@ -1,0 +1,21 @@
+### Pydantic
+
+
+#### What is the problem
+
+def insertIntoDB(name, age)
+
+Now, Other engineer can pass insertIntoDb("sidi", "forty"), Code will run though it's wrong.
+
+Solution can be type hinting but it's not a strict checking. Other solution can be if conditions like if name == str then perform action else not. However it's not scalable.
+
+Solution is pydantic.
+
+#### What is Pydantic
+
+#### Steps
+
+1. Define a pydatic model/class
+2. Instantiate the model with raw input data
+3. Use the validated model object in the code
+

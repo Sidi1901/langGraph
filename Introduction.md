@@ -1,26 +1,22 @@
+### Content
 
+1. [Large Language Models (LLMs)](#LLMs)
+2. [Token](#token)
+3. [Model Params](#model-params)
+4. [Prompts](#prompts)
+5. [Text Splitters](#text-splitters)
+6. [Vectors](#vectors)
+7. [Langchain](#langchain)
+8. [LangGraph](#langgraph)
+9. [Evals](#evals)
+10. [Retrieval-Augmented Generation (RAG)](#retrieval-augmented-generation-rag)
+11. [Tools & Agents](#tools--agents)
 
-#### Langchain
+### Large Language Models (LLMs)
 
-LangChain is a framework/library used to build applications powered by Large Language Models (LLMs).
-Instead of writing everything manually, LangChain gives reusable building blocks.
+A Large Language Model is a neural network trained on huge amounts of text to predict the next token in a sequence. Given enough scale (parameters + data + compute), this next-token prediction generalises into abilities like answering questions, writing code, reasoning, and following instructions.
 
-1) It supports major LLMs.
-2) Open Source, etc
-
-Example use cases:
-
-Chatbots, RAG applications, AI agents, Document Q&A and Multi-step AI workflows.
-
-langchain-workspace/
-├── langchain-core/       # Core interfaces, base classes, and data types
-├── langchain-community/  # Third-party integrations (OpenAI, HuggingFace, Pinecone, etc.)
-└── langchain/            # Advanced chains, agents, and application logic architecture
-
-Provides two types of models
-1) language models - Free from text generation
-2) Embedding models - Optimised for multi-turn conversation
-
+LLMs are stateless between calls — they don't "remember" previous conversations unless the conversation history is explicitly passed back in as part of the prompt/context window.
 
 ### Token
 
@@ -130,6 +126,37 @@ High-dimensional vectors are the secret sauce behind modern Artificial Intellige
 
 Calculating distances across thousands of dimensions requires immense processing power and memory, which is why specialized Vector Databases (like Chroma, Pinecone, or Milvus) are used to handle them efficiently.
 
+### Langchain
+
+LangChain is a framework/library used to build applications powered by Large Language Models (LLMs).
+Instead of writing everything manually, LangChain gives reusable building blocks.
+
+1) It supports major LLMs.
+2) Open Source, etc
+
+Example use cases:
+
+Chatbots, RAG applications, AI agents, Document Q&A and Multi-step AI workflows.
+
+langchain-workspace/
+├── langchain-core/       # Core interfaces, base classes, and data types
+├── langchain-community/  # Third-party integrations (OpenAI, HuggingFace, Pinecone, etc.)
+└── langchain/            # Advanced chains, agents, and application logic architecture
+
+Provides two types of models
+1) language models - Free from text generation
+2) Embedding models - Optimised for multi-turn conversation
+
+### LangGraph
+
+LangGraph is a library (built on top of LangChain) for building stateful, multi-step LLM applications as a graph of nodes and edges, instead of a single linear chain.
+
+Why LangGraph over a plain chain:
+1) Workflows can branch (conditional edges), loop (iterative edges), or run steps in parallel — plain chains only go forward.
+2) State is explicit and shared across every node, so each step can read/update a common state object.
+3) Built-in persistence (checkpointing) lets a graph pause, resume, or replay from any step — useful for human-in-the-loop and long-running agents.
+
+See Lesson12 onward (Sequential, Parallel, Conditional, Iterative workflows, Persistence) for hands-on graph construction.
 
 ### Evals
 
@@ -259,8 +286,20 @@ Industry Trend (2025–2026)
 
 The industry is slowly moving away from Benchmark Scores towards Application-Specific Evals
 
+### Retrieval-Augmented Generation (RAG)
 
+RAG combines retrieval (searching a knowledge base) with generation (the LLM producing an answer), so the model can answer using up-to-date or private data it was never trained on.
 
+Documents → Text Splitter → Embedding Model → Vector Store
+User Query → Embedding Model → Similarity Search → Retrieved Chunks
+Retrieved Chunks + Query → LLM → Answer
 
+A Retriever wraps a vector store (or other source) to fetch the most relevant chunks for a given query.
 
+### Tools & Agents
 
+Tools let an LLM call external functions (APIs, calculators, search, databases) instead of relying purely on its own knowledge. The model decides when and with what arguments to call a tool; your code executes it and returns the result back to the model.
+
+Agents are LLMs that can plan, call tools, observe results, and decide on next steps in a loop, rather than producing a single one-shot response.
+
+For multi-step, stateful, or branching agent workflows (sequential / parallel / conditional / iterative graphs with persistence), see LangGraph.

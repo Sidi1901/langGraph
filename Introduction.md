@@ -278,6 +278,8 @@ Measures: Can AI fix real GitHub issues?
 
 Today it is one of the most respected coding benchmarks.
 
+Btw, do you know what is vibe testing? XD
+
 #### LLM Application Evals
 
 Because benchmarks evaluate models, while application evals evaluate your entire system.

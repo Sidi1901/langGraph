@@ -74,6 +74,11 @@ Instructs the LLM to respond in a JSON format that matches a Pydantic model, the
 +------------------------------------------------------------------+
 </pre>
 
+### JsonOutputParser 
+
+JsonOutputParser is a built-in tool designed to take a raw text response from a Large Language Model (LLM) and parse it into a structured JSON object
+
+*Can you exaplain the difference between PydanticOutputParser and JsonOutputParser and when to use what btw?*
 
 ### Comparison
 
@@ -94,3 +99,4 @@ The core difference comes down to how the structure is enforced:
 OutputParsers (The Prompt-Based Way): The parser injects raw text formatting instructions (like "Return your answer as a valid JSON matching this schema...") into your prompt. The LLM generates standard text, and LangChain tries to parse that text string after the fact.
 
 .with_structured_output() (The Native Way): It bypasses prompt-level begging. It binds directly to the model's native API (like OpenAI's JSON Mode/Structured Outputs, Anthropic's Tool Calling, or Gemini's Function Calling). The model is constrained at the token generation level to output valid structures.
+
